@@ -11,28 +11,28 @@ NAME
 			pcall -  command to call a contact searching by name
 
 SYNOPSIS
-			pcall -c -f -s -p -v [searchterm1] [searchterm2] ...
+			pcall -f -s -p -v [searchterm1] [searchterm2] ...
 
 DESCRIPTION
-			pcall is a php script to make easier to call a contact within the termux command line, 	
+			pcall is a php script to make easier to call a contact within the termux command line, 
+			just run the script with some search terms, and if there is only one result, will call your contact
+			 
 			all human output goes to stderr and json output goes to stdout useful if you want to pipe 
 			it to jq to prettyfy or extra processing.
 			It's straighforward to use, if you have a suggestion, please send it to: pulketo at G.mail
 
 EXAMPLES
-			pcall john doe -c -f
-				will (-c)all the (-f)irst john doe on your list
+			pcall john doe -f
+				will call the (-f)irst john doe on your list
 			pcall john doe 551
-				will show john doe with 551 on the name/number, useful if there are more than one John Doe.
-			pcall john doe 551 -c
-				will call john doe contact which has a 551 on the name/number.
+				will show john doe with 551 on the name/number, execute termux-call if there is just one match, or show a list if there is more than one.
+			pcall john doe -f -p +521
+				will call John Doe but dial a prefix before the number.
 
 OPTIONS
       Search terms must not have a dash before the word, it's a bug/feature on the library nategood/commando
 
    General options
-			-c --call
-					If there is one and only one match, call him/her.
 			-f --callthefirst
 					No matter if there is more than one, call the first on the list.
 			-s	--simcall
@@ -41,6 +41,8 @@ OPTIONS
 					A dial prefix, some countries when you are out of your city, you should dial some numbers at the beginning.
 			-v 	--version
 					Show version
+			-c --call (deprecated, calling if there is one match is the default now)
+					If there is one and only one match, call him/her.
 
 EXIT STATUS
        0      Successful program execution.

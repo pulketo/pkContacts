@@ -6,12 +6,12 @@ DEFINE("HELP", "
 					| jq -c '.[] | select(.name | contains(\"john\"))'\
 					| jq -s unique | jq -c '.[] | select(.name | contains(\"doe\"))' ... so on
 	Usage:
-			pcall john doe -c -f -j
-				will (-c)all the (-f)irst john doe on your list and output info in (-j)son format.
+			pcall john doe -f
+				will call the (-f)irst john doe on your list
 			pcall john doe 551
-				will show john doe with 551 on the name/number, useful if there are more than one John Doe.
-			pcall john doe 551 -c
-				will call john doe contact which has a 551 on the name/number.
+				will show john doe with 551 on the name/number, execute termux-call if there is just one match, or show a list if there is more than one.
+			pcall john doe -f -p +521
+				will call John Doe but dial a prefix before the number.
 			All human output goes to stderr and json output goes to stdout useful if you want to pipe it to jq to prettyfy or extra processing.
 ");
 	require __DIR__ ."/vendor/autoload.php";
@@ -80,7 +80,7 @@ function show($arr){
 	{
 		case "1":
 			show($o);
-			if (!x$opts['simcall']){
+			if ((!$opts['simcall'])){
 				if (strlen($opts['prefix'])>0)			
 					echo "dialing with prefix: ".$opts['prefix'].PHP_EOL;
 				$extract = array_pop($o);
