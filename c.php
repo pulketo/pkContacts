@@ -87,20 +87,24 @@ function show($arr){
 	switch(sizeOf($o))
 	{
 		case "1":
-			show($o);
+			$extract = array_pop($o);
+			$extract["prefix"]=(strlen($opts['prefix'])>0)?$opts['prefix']:"";
+			$cmd = "termux-call ".$opts['prefix'].str_replace(" ","", $extract['number']);
 			if ((!$opts['simcall'])){
 				if (strlen($opts['prefix'])>0)			
-					echo "dialing with prefix: ".$opts['prefix'].PHP_EOL;
-				$extract = array_pop($o);
-				$cmd = "termux-call ".$opts['prefix'].str_replace(" ","", $extract['number']);
-				if ($opts['simcall'])
-					echo "simulating: $cmd".PHP_EOL;
-				else{
-					echo $cmd;
-					$exe = trim(`$cmd`);
+					fwrite(STDERR, "dialing with prefix: ".$opts['prefix'].PHP_EOL);
+				$extract["status"]="calling";
+				fwrite(STDERR, $cmd.PHP_EOL);
+				$exe = trim(`$cmd`);
+			}else{
+				if ($opts['simcall']){
+					fwrite(STDERR, "simulating: $cmd".PHP_EOL);
+					$extract["status"]="simcall";
 				}
 			}
-			fwrite(STDERR, PHP_EOL);exit(0);
+			fwrite(STDERR, PHP_EOL);
+			show($extract);
+			exit(0);
 			break;
 		case "0":
 			if (($numArgs)>2){
