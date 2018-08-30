@@ -47,7 +47,7 @@ OPTIONS
 EXIT STATUS
        0      Successful program execution.
 
-       1      Too many matches, -c present but -f not specified.
+       1      Too many matches, but -f not specified.
 
        2      No matches.
 
