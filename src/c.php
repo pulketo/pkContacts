@@ -6,18 +6,24 @@ DEFINE("HELP", "
 					| jq -c '.[] | select(.name | contains(\"john\"))'\
 					| jq -s unique | jq -c '.[] | select(.name | contains(\"doe\"))' ... so on
 	Usage:
-			pcall john doe -c -f -j
-				will (-c)all the (-f)irst john doe on your list and output info in (-j)son format.
+			pcall john doe -f
+				will call the (-f)irst john doe on your list
 			pcall john doe 551
-				will show john doe with 551 on the name/number, useful if there are more than one John Doe.
-			pcall john doe 551 -c
-				will call john doe contact which has a 551 on the name/number.
+				will show john doe with 551 on the name/number, execute termux-call if there is just one match, or show a list if there is more than one.
+			pcall john doe -f -p +521
+				will call John Doe but dial a prefix before the number.
 			All human output goes to stderr and json output goes to stdout useful if you want to pipe it to jq to prettyfy or extra processing.
 ");
 	require __DIR__ ."/vendor/autoload.php";
 	$opts = new Commando\Command();
 
 // Functions
+function fix($i){
+	$t = array(
+    "\u00c0" =>"À",     "\u00c1" =>"Á",     "\u00c2" =>"Â",     "\u00c3" =>"Ã",     "\u00c4" =>"Ä",     "\u00c5" =>"Å",     "\u00c6" =>"Æ",     "\u00c7" =>"Ç",     "\u00c8" =>"È",     "\u00c9" =>"É",     "\u00ca" =>"Ê",     "\u00cb" =>"Ë",     "\u00cc" =>"Ì",     "\u00cd" =>"Í",     "\u00ce" =>"Î",     "\u00cf" =>"Ï",     "\u00d1" =>"Ñ",     "\u00d2" =>"Ò",     "\u00d3" =>"Ó",     "\u00d4" =>"Ô",     "\u00d5" =>"Õ",     "\u00d6" =>"Ö",     "\u00d8" =>"Ø",     "\u00d9" =>"Ù",     "\u00da" =>"Ú",     "\u00db" =>"Û",     "\u00dc" =>"Ü",     "\u00dd" =>"Ý",     "\u00df" =>"ß",     "\u00e0" =>"à",     "\u00e1" =>"á",     "\u00e2" =>"â",     "\u00e3" =>"ã",     "\u00e4" =>"ä",     "\u00e5" =>"å",     "\u00e6" =>"æ",     "\u00e7" =>"ç",     "\u00e8" =>"è",     "\u00e9" =>"é",     "\u00ea" =>"ê",     "\u00eb" =>"ë",     "\u00ec" =>"ì",     "\u00ed" =>"í",     "\u00ee" =>"î",     "\u00ef" =>"ï",     "\u00f0" =>"ð",     "\u00f1" =>"ñ",     "\u00f2" =>"ò",     "\u00f3" =>"ó",     "\u00f4" =>"ô",     "\u00f5" =>"õ",     "\u00f6" =>"ö",     "\u00f8" =>"ø",     "\u00f9" =>"ù",     "\u00fa" =>"ú",     "\u00fb" =>"û",     "\u00fc" =>"ü",     "\u00fd" =>"ý", "\u00ff" =>"ÿ");
+	return strtr($i, $t);
+	}
+
 function arrSearch($hayStack, $needle){
 	$o = array_filter($hayStack, function($el) use ($needle) {
 		return ( stripos($el['name'], $needle) !== false || stripos($el['number'], $needle) !== false );
@@ -38,7 +44,9 @@ function filter($contents){
 	return $exe;
 }
 function showJson($arr){
-	print_r(json_encode($arr));
+	$o = print_r(json_encode($arr, JSON_PRETTY_PRINT),true);
+	$o = fix($o);
+	echo $o;
 }
 
 function show($arr){
@@ -54,7 +62,7 @@ function show($arr){
 	$opts->option('f')->aka('callthefirst')->describedAs('Call the first match')->boolean()->defaultsTo(false);
 	$opts->option('p')->aka('prefix')->describedAs('A dial prefix (optional)')->defaultsTo("");
 	$opts->option('s')->aka('simcall')->describedAs('Simulate call')->boolean()->defaultsTo(false);
-	$opts->option('v')->aka('version')->describedAs('Version 1.01')->boolean()->defaultsTo(false);
+	$opts->option('v')->aka('version')->describedAs('Version 1.02')->boolean()->defaultsTo(false);
 	$opts->option('c')->aka('call')->describedAs("deprecated, this is the default now.")->boolean()->defaultsTo(false);
 	// $opts->option('j')->aka('json')->describedAs('Output in json format')->boolean()->defaultsTo(false);
 
@@ -79,20 +87,24 @@ function show($arr){
 	switch(sizeOf($o))
 	{
 		case "1":
-			show($o);
-			if (!x$opts['simcall']){
+			$extract = array_pop($o);
+			$extract["prefix"]=(strlen($opts['prefix'])>0)?$opts['prefix']:"";
+			$cmd = "termux-call ".$opts['prefix'].str_replace(" ","", $extract['number']);
+			if ((!$opts['simcall'])){
 				if (strlen($opts['prefix'])>0)			
-					echo "dialing with prefix: ".$opts['prefix'].PHP_EOL;
-				$extract = array_pop($o);
-				$cmd = "termux-call ".$opts['prefix'].str_replace(" ","", $extract['number']);
-				if ($opts['simcall'])
-					echo "simulating: $cmd".PHP_EOL;
-				else{
-					echo $cmd;
-					$exe = trim(`$cmd`);
+					fwrite(STDERR, "dialing with prefix: ".$opts['prefix'].PHP_EOL);
+				$extract["status"]="calling";
+				fwrite(STDERR, $cmd.PHP_EOL);
+				$exe = trim(`$cmd`);
+			}else{
+				if ($opts['simcall']){
+					fwrite(STDERR, "simulating: $cmd".PHP_EOL);
+					$extract["status"]="simcall";
 				}
 			}
-			fwrite(STDERR, PHP_EOL);exit(0);
+			fwrite(STDERR, PHP_EOL);
+			show($extract);
+			exit(0);
 			break;
 		case "0":
 			if (($numArgs)>2){
