@@ -1,4 +1,6 @@
-ACK
+WHAT IS
+			Script to call a person on your contact list by his/her name on Termux.			
+	
 			This script is intended to be run on termux emulator (which is a Terminal emulator and Linux environment for Android)
 
 			Requires (Android side):
